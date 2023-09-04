@@ -114,9 +114,16 @@ func Provider() tfbridge.ProviderInfo {
 			// 		EnvVars: []string{"AWS_REGION", "AWS_DEFAULT_REGION"},
 			// 	},
 			// },
+			// "uri": {
+			// 	Type: tfbridge.MakeResource("region", "Region"),
+			// 	Default: &tfbridge.DefaultInfo{
+			// 		EnvVars: []string{"AWS_REGION", "AWS_DEFAULT_REGION"},
+			// 	},
+			// },
+
 		},
 		PreConfigureCallback: preConfigureCallback,
-		Resources:            map[string]*tfbridge.ResourceInfo{
+		Resources: map[string]*tfbridge.ResourceInfo{
 			// Map each resource in the Terraform provider to a Pulumi type. Two examples
 			// are below - the single line form is the common case. The multi-line form is
 			// needed only if you wish to override types or other default options.
@@ -129,6 +136,8 @@ func Provider() tfbridge.ProviderInfo {
 			// 		"tags": {Type: tfbridge.MakeType("opnsense", "Tags")},
 			// 	},
 			// },
+			"opnsense_dhcp_static_map":   {Tok: tfbridge.MakeResource("opnsense", mainMod, "dhcp_static_map")},
+			"opnsense_dns_host_override": {Tok: tfbridge.MakeResource("opnsense", mainMod, "dns_host_override")},
 		},
 		DataSources: map[string]*tfbridge.DataSourceInfo{
 			// Map each resource in the Terraform provider to a Pulumi function. An example
