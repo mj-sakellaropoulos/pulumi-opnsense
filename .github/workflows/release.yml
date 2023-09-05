@@ -16,14 +16,14 @@ env:
   # THEN ENSURE THE NPM_REGISTRY_URL IS CHANGED
   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-  PUBLISH_NPM: true
+  PUBLISH_NPM: false
   NPM_REGISTRY_URL: https://registry.npmjs.org
   # IF YOU NEED TO PUBLISH A NUGET PACKAGE THEN ENSURE AN NUGET_PUBLISH_KEY
   # SECRET IS SET AND PUBLISH_NUGET: TRUE. IF YOU WANT TO PUBLISH TO AN ALTERNATIVE
   # NPM REGISTRY THEN ENSURE THE NPM_REGISTRY_URL IS CHANGED
   NUGET_PUBLISH_KEY: ${{ secrets.NUGET_PUBLISH_KEY }}
   NUGET_FEED_URL: https://api.nuget.org/v3/index.json
-  PUBLISH_NUGET: true
+  PUBLISH_NUGET: false
   # IF YOU NEED TO PUBLISH A PYPI PACKAGE THEN ENSURE AN PYPI_API_TOKEN
   # SECRET IS SET AND PUBLISH_PYPI: TRUE. IF YOU WANT TO PUBLISH TO AN ALTERNATIVE
   # PYPI REGISTRY THEN ENSURE THE PYPI_REPOSITORY_URL IS SET. IF YOU ARE USING AN API_TOKEN THEN
@@ -32,7 +32,7 @@ env:
   PYPI_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
   PYPI_USERNAME: "__token__"
   PYPI_REPOSITORY_URL: ""
-  PUBLISH_PYPI: true
+  PUBLISH_PYPI: false
 
 jobs:
   publish_binary:
@@ -135,6 +135,13 @@ jobs:
               exit 1
           fi
 
+      - uses: cardinalby/git-get-release-action@v1
+        id: find_release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag: '${{ env.GORELEASER_CURRENT_TAG }}'    
+
       - if: ${{ matrix.language == 'python' && env.PUBLISH_PYPI == 'true' }}
         name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -156,6 +163,18 @@ jobs:
           dotnet nuget push ${{github.workspace}}/sdk/dotnet/bin/Debug/*.nupkg -s ${{ env.NUGET_FEED_URL }} -k ${{ env.NUGET_PUBLISH_KEY }}
           echo "done publishing packages"
 
+      # upload nupkg to releases manually.
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.find_release.outputs.upload_url }} 
+          asset_path: ${{github.workspace}}/sdk/dotnet/bin/Debug/*.nupkg
+          asset_name: Pulumiverse.Opnsense.nupkg
+          asset_content_type: application/zip
+
     strategy:
       fail-fast: true
       matrix:
@@ -170,8 +189,8 @@ jobs:
         # javaversion:
         # - "11"
         language:
-          - nodejs
-          - python
+          # - nodejs
+          # - python
           - dotnet
           - go
           # - java
